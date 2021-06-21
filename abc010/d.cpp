@@ -1,42 +1,61 @@
 #include <bits/stdc++.h>
 using namespace std;
 
-#define ll long long
 #define MAX 110
+#define INF 10000000
 
-vector<int> adj[MAX];
+struct edge{
+    int to, cap, rev;
+};
+
+vector<edge> G[MAX];
+bool used[MAX];
+
+void add_edge(int from, int to, int cap){
+    G[from].push_back((edge){to, cap, (int)G[to].size()});
+    G[to].push_back((edge){from, 0, (int)G[from].size()-1});
+}
+
+int dfs(int v, int t, int f){
+    if(v == t) return f;
+    used[v] = true;
+    for(int i=0; i<G[v].size(); i++){
+        edge &e = G[v][i];
+        if(!used[e.to] && e.cap > 0){
+            int d = dfs(e.to, t, min(e.cap, f));
+            if(d > 0){
+                e.cap -= d;
+                G[e.to][e.rev].cap += d;
+                return d;
+            }
+        }
+    }
+    return 0;
+}
+
+int max_flow(int s, int t){
+    int flow = 0;
+    while(true){
+        for(int i=0; i<MAX; i++) used[i] = false;
+        int f = dfs(s, t, INF);
+        if(f == 0) return flow;
+        flow += f;
+    }
+}
+
 
 int main(){
     int n, g, e;
     cin >> n >> g >> e;
     for(int i=0; i<g; i++){
         int u; cin >> u;
-        adj[u].push_back(n);
-        adj[n].push_back(u);
+        add_edge(u, n, 1);
     }
     for(int i=0; i<e; i++){
         int u, v; cin >> u >> v;
-        adj[u].push_back(v);
-        adj[v].push_back(u);
+        add_edge(u, v, 1);
+        add_edge(v, u, 1);
     }
-    bool al[MAX][MAX];
-    for(int i=0; i<MAX; i++) for(int j=0; j<MAX; j++) al[i][j] = false;
-    int ans = 0;
-    queue<int> q;
-    q.push(0);
-    while(!q.empty()){
-        int u = q.front(); q.pop();
-        if(u == n){
-            ans++;
-            continue;
-        }
-        for(int v : adj[u]){
-            if(!al[u][v]){
-                al[u][v] = true;
-                q.push(v);
-            }
-        }
-    }
-    cout << ans << endl;
+    cout << max_flow(0, n) << endl;
     return 0;
 }
